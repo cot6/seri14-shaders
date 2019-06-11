@@ -51,7 +51,7 @@ void PS_GPUImageLUT(float4 pos : SV_Position, float2 texcoord : TEXCOORD, out fl
 	float4 newColor = lerp(newColor1, newColor2, frac(blueColor));
 	float  depth = ReShade::GetLinearizedDepth(texcoord);
 
-	color = lerp(backColor, newColor, fLUT_Intensity * step(1.0, depth));
+	color = lerp(backColor, newColor, step(1.0, depth) * fLUT_Intensity);
 	color.a = backColor.a;
 }
 
