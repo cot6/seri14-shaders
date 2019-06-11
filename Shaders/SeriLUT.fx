@@ -17,7 +17,12 @@
 
 uniform int fLUT_Selector <
 	ui_type = "combo";
-	ui_items = "[ 1] High Aetherity\0[ 2] Night of Anime\0[ 3] Summer Light\0[ 4] Lost Memory\0[ 5] East Style\0";
+	ui_items = "[ 1] High Aetherity\0"
+	           "[ 2] Night of Anime\0"
+	           "[ 3] Summer Light\0"
+	           "[ 4] Lost Memory\0"
+	           "[ 5] East Style\0"
+	           "[ 6] Good Day\0";
 	ui_label = "Use LUT";
 > = 0;
 
@@ -32,13 +37,15 @@ texture LUT_1Tex < source = "high_aetherity_20190206_1.png"; > { Width = 512; He
 texture LUT_2Tex < source = "night_of_anime_20190206_1.png"; > { Width = 512; Height = 512; };
 texture LUT_3Tex < source = "summer_light_20190206_1.png"; > { Width = 512; Height = 512; };
 texture LUT_4Tex < source = "lost_memory_20190206_1.png"; > { Width = 512; Height = 512; };
-texture LUT_5Tex < source = "east_style_20190212_1.png"; > { Width = 512; Height = 512; };
+texture LUT_5Tex < source = "east_style_20190213_1.png"; > { Width = 512; Height = 512; };
+texture LUT_6Tex < source = "good_day_20190217_1.png"; > { Width = 512; Height = 512; };
 
 sampler LUT_1Sampler { Texture = LUT_1Tex; };
 sampler LUT_2Sampler { Texture = LUT_2Tex; };
 sampler LUT_3Sampler { Texture = LUT_3Tex; };
 sampler LUT_4Sampler { Texture = LUT_4Tex; };
 sampler LUT_5Sampler { Texture = LUT_5Tex; };
+sampler LUT_6Sampler { Texture = LUT_6Tex; };
 
 float4 macro_textureColor(float2 texcoord)
 {
@@ -50,6 +57,7 @@ float4 macro_textureColor(float2 texcoord)
 	case 2: return tex2D(LUT_3Sampler, texcoord);
 	case 3: return tex2D(LUT_4Sampler, texcoord);
 	case 4: return tex2D(LUT_5Sampler, texcoord);
+	case 5: return tex2D(LUT_6Sampler, texcoord);
 	}
 	return tex2D(LUT_1Sampler, texcoord);
 }
