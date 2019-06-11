@@ -1,7 +1,7 @@
-// -------------------------------------
 // SeriLUT (c) 2019 seri14
 // -------------------------------------
 // Based on BradLarson/GPUImage (https://github.com/BradLarson/GPUImage)
+// -------------------------------------
 // Copyright (c) 2012, Brad Larson, Ben Cochran, Hugues Lismonde, Keitaroh Kobayashi, Alaric Cole, Matthew Clark, Jacob Gundersen, Chris Williams.
 // All rights reserved.
 // 
@@ -13,11 +13,9 @@
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // -------------------------------------
 
-#include "ReShadeUI.fxh"
-
-uniform float fLUT_Intensity < __UNIFORM_SLIDER_FLOAT1
-	ui_min = 0.0; ui_max = 1.0; ui_step = (2.5 / 100.0);
-	ui_label = "Intensity";
+uniform float fLUT_Intensity <
+	ui_min = 0.0; ui_max = 1.0; ui_step = (1.0 / 100.0);
+	ui_type = "slider"; ui_label = "Intensity";
 > = 1.0;
 
 #include "ReShade.fxh"
@@ -25,30 +23,24 @@ uniform float fLUT_Intensity < __UNIFORM_SLIDER_FLOAT1
 texture __SERILUT_ID < source = __SERILUT_SOURCE; > { Width = 512; Height = 512; Format = RGBA8; };
 sampler Sampler { Texture = __SERILUT_ID; };
 
-void PS_GPUImageLUT(float4 pos : SV_Position, float2 texcoord : TEXCOORD, out float4 color : SV_Target)
+void PS_GPUImageLUT(float4 vars : SV_Position, float2 texCoord : TEXCOORD, out float4 back : SV_Target)
 {
-	float4 textureColor = tex2D(ReShade::BackBuffer, texcoord);
+	back = tex2D(ReShade::BackBuffer, texCoord);
+	float blueTable = back.b * 63.0;
 
-	float blueColor = textureColor.b * 63.0;
+	vars.x = floor(blueTable);
+	vars.y = floor(vars.x * 0.125);
+	vars.x = vars.x - vars.y * 8.0;
 
-	float2 quad1;
-	quad1.y = floor(floor(blueColor) / 8.0);
-	quad1.x = floor(blueColor) - quad1.y * 8.0;
+	vars.z = ceil(blueTable);
+	vars.w = floor(vars.z * 0.125);
+	vars.z = vars.z - vars.w * 8.0;
 
-	float2 quad2;
-	quad2.y = floor(ceil(blueColor) / 8.0);
-	quad2.x = ceil(blueColor) - quad2.y * 8.0;
+	vars = (vars + back.rgrg * 0.984375 + 0.0078125) * 0.125;
+	vars = lerp(tex2D(Sampler, vars.xy), tex2D(Sampler, vars.zw), frac(blueTable));
 
-	float2 texPos1 = quad1.xy * 0.125 + 0.5 / 512.0 + (0.125 - 1.0 / 512.0) * textureColor.rg;
-	float2 texPos2 = quad2.xy * 0.125 + 0.5 / 512.0 + (0.125 - 1.0 / 512.0) * textureColor.rg;
-
-	float4 newColor1 = tex2D(Sampler, texPos1);
-	float4 newColor2 = tex2D(Sampler, texPos2);
-
-	float4 newColor = lerp(newColor1, newColor2, frac(blueColor));
-
-	color = lerp(textureColor, newColor, fLUT_Intensity);
-	color.a = textureColor.a;
+	vars.a = back.a;
+	back = lerp(back, vars, fLUT_Intensity);
 }
 
 technique __SERILUT_ID < ui_label = __SERILUT_LABEL; >

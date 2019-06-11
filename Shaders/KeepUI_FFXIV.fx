@@ -24,6 +24,22 @@
 // ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 
+uniform bool bTroubleshootOpacityIssue <
+	ui_category = "Troubleshooting (Do not use)";
+	ui_label = "Enable UI Highlighting";
+	ui_tooltip = "If you notice invalid colors on objects, enable FXAA in Final Fantasy XIV's Graphics Settings.\n"
+	             "Open [System Configuration]\n"
+	             "  -> [Graphics Settings]\n"
+	             "  -> [General]\n"
+	             " Set [Edge Smoothing (Anti-aliasing)] from \"Off\" to \"FXAA\"";
+> = false;
+
+uniform int iBlendSource <
+	ui_category = "Troubleshooting (Do not use)";
+	ui_label = "Blend Type"; ui_type = "combo";
+	ui_items = "Checkerboard\0Negative\0";
+> = 0;
+
 #include "ReShade.fxh"
 
 texture FFKeepUI_Tex { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; };
@@ -36,14 +52,35 @@ void PS_FFKeepUI(float4 pos : SV_Position, float2 texcoord : TEXCOORD, out float
 
 void PS_FFRestoreUI(float4 pos : SV_Position, float2 texcoord : TEXCOORD, out float4 color : SV_Target)
 {
-	float4 back = tex2D(ReShade::BackBuffer, texcoord);
 	float4 keep = tex2D(FFKeepUI_Sampler, texcoord);
+	float4 back;
 
-	color = lerp(back, keep, keep.a);
+	if (bTroubleshootOpacityIssue)
+	{
+		if (0 == iBlendSource)
+		{
+			back    = step(1, pos.x / 32 % 2) == step(1, pos.y / 32 % 2) ? 0.45 : 0.55;
+			color   = lerp(back, keep, keep.a);
+			color.a = keep.a;
+		}
+		else
+		{
+			back    = step(1.19209e-07, keep.a) ? 1 - keep : keep;
+			color   = lerp(back, keep, 1 - keep.a);
+			color.a = keep.a;
+		}
+	}
+	else
+	{
+		back    = tex2D(ReShade::BackBuffer, texcoord);
+		color   = lerp(back, keep, keep.a);
+		color.a = keep.a;
+	}
 }
 
 technique FFKeepUI <
-	ui_tooltip = "Keep the colors of screen into the texture for restoring colors of UI when executing FFRestoreUI.";
+	ui_tooltip = "Place this at the top of your Technique list to save the UI into a texture for restoration with FFRestoreUI.\n"
+	             "To use this Technique, you must also enable \"FFRestoreUI\".";
 >
 {
 	pass
@@ -55,7 +92,8 @@ technique FFKeepUI <
 }
 
 technique FFRestoreUI <
-	ui_tooltip = "Restore the colors of UI (include HUD) using the texture of screen kept when executing FFKeepUI.";
+	ui_tooltip = "Place this at the bottom of your Technique list to restore the UI texture saved by FFKeepUI.\n"
+	             "To use this Technique, you must also enable \"FFKeepUI\".";
 >
 {
 	pass
