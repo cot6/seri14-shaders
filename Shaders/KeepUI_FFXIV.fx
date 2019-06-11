@@ -44,7 +44,6 @@ void PS_FFRestoreUI(float4 pos : SV_Position, float2 texcoord : TEXCOORD, out fl
 
 technique FFKeepUI <
 	ui_tooltip = "Keep the colors of screen into the texture for restoring colors of UI when executing FFRestoreUI.";
-	enabled = true;
 >
 {
 	pass
@@ -57,7 +56,6 @@ technique FFKeepUI <
 
 technique FFRestoreUI <
 	ui_tooltip = "Restore the colors of UI (include HUD) using the texture of screen kept when executing FFKeepUI.";
-	enabled = true;
 >
 {
 	pass
