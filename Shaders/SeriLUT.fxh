@@ -1,5 +1,5 @@
 // -------------------------------------
-// SeriLUT 息 2019 seri14
+// SeriLUT (c) 2019 seri14
 // -------------------------------------
 // Based on BradLarson/GPUImage (https://github.com/BradLarson/GPUImage)
 // Copyright (c) 2012, Brad Larson, Ben Cochran, Hugues Lismonde, Keitaroh Kobayashi, Alaric Cole, Matthew Clark, Jacob Gundersen, Chris Williams.

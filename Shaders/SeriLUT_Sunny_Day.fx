@@ -1,5 +1,5 @@
 // -------------------------------------
-// SeriLUT c 2019 seri14
+// SeriLUT (c) 2019 seri14
 // -------------------------------------
 
 #define __SERILUT_ID      SeriLUT_Sunny_Day
