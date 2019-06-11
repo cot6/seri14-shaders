@@ -1,5 +1,5 @@
 // -------------------------------------
-// SeriLUT © 2019 seri14
+// SeriLUT 息 2019 seri14
 // -------------------------------------
 // Based on BradLarson/GPUImage (https://github.com/BradLarson/GPUImage)
 // Copyright (c) 2012, Brad Larson, Ben Cochran, Hugues Lismonde, Keitaroh Kobayashi, Alaric Cole, Matthew Clark, Jacob Gundersen, Chris Williams.
@@ -13,58 +13,24 @@
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // -------------------------------------
 
-#include "ReShade.fxh"
-
-uniform int fLUT_Selector <
-	ui_type = "combo";
-	ui_items = "[ 1] High Aetherity\0"
-	           "[ 2] Night of Anime\0"
-	           "[ 3] Summer Light\0"
-	           "[ 4] Lost Memory\0"
-	           "[ 5] East Style\0"
-	           "[ 6] Good Day\0";
-	ui_label = "Use LUT";
-> = 0;
-
 uniform float fLUT_Intensity <
+	ui_min = 0.0; ui_max = 1.0; ui_step = (2.5 / 100.0);
 	ui_type = "slider";
-	ui_min = 0.0; ui_max = 1.0;
 	ui_label = "Intensity";
-	ui_tooltip = "Intensity to blend color.";
 > = 1.0;
 
-texture LUT_1Tex < source = "high_aetherity_20190206_1.png"; > { Width = 512; Height = 512; };
-texture LUT_2Tex < source = "night_of_anime_20190206_1.png"; > { Width = 512; Height = 512; };
-texture LUT_3Tex < source = "summer_light_20190206_1.png"; > { Width = 512; Height = 512; };
-texture LUT_4Tex < source = "lost_memory_20190206_1.png"; > { Width = 512; Height = 512; };
-texture LUT_5Tex < source = "east_style_20190213_1.png"; > { Width = 512; Height = 512; };
-texture LUT_6Tex < source = "good_day_20190217_2.png"; > { Width = 512; Height = 512; };
+#include "ReShade.fxh"
 
-sampler LUT_1Sampler { Texture = LUT_1Tex; };
-sampler LUT_2Sampler { Texture = LUT_2Tex; };
-sampler LUT_3Sampler { Texture = LUT_3Tex; };
-sampler LUT_4Sampler { Texture = LUT_4Tex; };
-sampler LUT_5Sampler { Texture = LUT_5Tex; };
-sampler LUT_6Sampler { Texture = LUT_6Tex; };
+texture __SERILUT_ID < source = __SERILUT_SOURCE; > { Width = 512; Height = 512; Format = RGBA8; };
+sampler Sampler { Texture = __SERILUT_ID; };
 
-float4 macro_textureColor(float2 texcoord)
+texture __SERILUT_BEFORE_ID { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format = RGBA8; };
+sampler Sampler_Before { Texture = __SERILUT_BEFORE_ID; };
+
+void PS_GPUImageLUT(float4 pos : SV_Position, float2 texcoord : TEXCOORD, out float4 color : SV_Target)
 {
-	[branch]
-	switch (fLUT_Selector)
-	{
-	case 0: return tex2D(LUT_1Sampler, texcoord);
-	case 1: return tex2D(LUT_2Sampler, texcoord);
-	case 2: return tex2D(LUT_3Sampler, texcoord);
-	case 3: return tex2D(LUT_4Sampler, texcoord);
-	case 4: return tex2D(LUT_5Sampler, texcoord);
-	case 5: return tex2D(LUT_6Sampler, texcoord);
-	}
-	return tex2D(LUT_1Sampler, texcoord);
-}
-
-float4 PS_GPUImageLUT(float4 pos : SV_Position, float2 texcoord : TEXCOORD) : SV_Target
-{
-	float4 textureColor = tex2D(ReShade::BackBuffer, texcoord);
+	float4 backColor = tex2D(ReShade::BackBuffer, texcoord);
+	float4 textureColor = tex2D(Sampler_Before, texcoord);
 
 	float blueColor = textureColor.b * 63.0;
 
@@ -79,18 +45,36 @@ float4 PS_GPUImageLUT(float4 pos : SV_Position, float2 texcoord : TEXCOORD) : SV
 	float2 texPos1 = quad1.xy * 0.125 + 0.5 / 512.0 + (0.125 - 1.0 / 512.0) * textureColor.rg;
 	float2 texPos2 = quad2.xy * 0.125 + 0.5 / 512.0 + (0.125 - 1.0 / 512.0) * textureColor.rg;
 
-	float4 newColor1 = macro_textureColor(texPos1);
-	float4 newColor2 = macro_textureColor(texPos2);
+	float4 newColor1 = tex2D(Sampler, texPos1);
+	float4 newColor2 = tex2D(Sampler, texPos2);
 
 	float4 newColor = lerp(newColor1, newColor2, frac(blueColor));
-	return lerp(textureColor, newColor, fLUT_Intensity);
+	float  depth = ReShade::GetLinearizedDepth(texcoord);
+
+	color = lerp(backColor, newColor, fLUT_Intensity * step(1.0, depth));
+	color.a = backColor.a;
 }
 
-technique SeriLUT
+float4 PS_SeriLUT_Before(float4 pos : SV_Position, float2 texcoord : TEXCOORD) : SV_Target
+{
+	return tex2D(ReShade::BackBuffer, texcoord);
+}
+
+technique __SERILUT_ID < ui_label = __SERILUT_LABEL; >
 {
 	pass GPUImageLUT
 	{
 		VertexShader = PostProcessVS;
 		PixelShader = PS_GPUImageLUT;
+	}
+}
+
+technique __SERILUT_BEFORE_ID < ui_label = __SERILUT_BEFORE_LABEL; >
+{
+	pass
+	{
+		VertexShader = PostProcessVS;
+		PixelShader = PS_SeriLUT_Before;
+		RenderTarget = __SERILUT_BEFORE_ID;
 	}
 }
