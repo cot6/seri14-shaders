@@ -38,7 +38,7 @@ texture LUT_2Tex < source = "night_of_anime_20190206_1.png"; > { Width = 512; He
 texture LUT_3Tex < source = "summer_light_20190206_1.png"; > { Width = 512; Height = 512; };
 texture LUT_4Tex < source = "lost_memory_20190206_1.png"; > { Width = 512; Height = 512; };
 texture LUT_5Tex < source = "east_style_20190213_1.png"; > { Width = 512; Height = 512; };
-texture LUT_6Tex < source = "good_day_20190217_1.png"; > { Width = 512; Height = 512; };
+texture LUT_6Tex < source = "good_day_20190217_2.png"; > { Width = 512; Height = 512; };
 
 sampler LUT_1Sampler { Texture = LUT_1Tex; };
 sampler LUT_2Sampler { Texture = LUT_2Tex; };
