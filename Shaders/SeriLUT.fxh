@@ -31,12 +31,10 @@ void PS_GPUImageLUT(float4 vars : SV_Position, float2 texCoord : TEXCOORD, out f
 	float blueTable = back.b * 63.0;
 
 	vars.x = floor(blueTable);
-	vars.y = floor(vars.x * 0.125);
-	vars.x = vars.x - vars.y * 8.0;
-
 	vars.z = ceil(blueTable);
-	vars.w = floor(vars.z * 0.125);
-	vars.z = vars.z - vars.w * 8.0;
+
+	vars.yw = floor(vars.xz * 0.125);
+	vars.xz = vars.xz - vars.yw * 8.0;
 
 	vars = (vars + back.rgrg * 0.984375 + 0.0078125) * 0.125;
 	vars = lerp(tex2D(Sampler, vars.xy), tex2D(Sampler, vars.zw), frac(blueTable));
